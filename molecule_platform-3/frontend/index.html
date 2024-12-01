@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Molecular Analysis Platform</title>
+    <script>
+      // Single source of truth for script loading status
+      window.moleculeViewerDeps = {
+        jquery: false,
+        threeDMol: false,
+        rdkit: false
+      };
+
+      // Load scripts in sequence
+      const loadScripts = async () => {
+        try {
+          // Load jQuery
+          await new Promise((resolve, reject) => {
+            const script = document.createElement('script');
+            script.src = 'https://code.jquery.com/jquery-3.7.1.min.js';
+            script.onload = () => {
+              window.moleculeViewerDeps.jquery = true;
+              resolve();
+            };
+            script.onerror = reject;
+            document.head.appendChild(script);
+          });
+
+          // Load 3Dmol.js
+          await new Promise((resolve, reject) => {
+            const script = document.createElement('script');
+            script.src = 'https://3dmol.org/build/3Dmol-min.js';
+            script.onload = () => {
+              window.moleculeViewerDeps.threeDMol = true;
+              resolve();
+            };
+            script.onerror = reject;
+            document.head.appendChild(script);
+          });
+
+          // Load RDKit
+          await new Promise((resolve, reject) => {
+            const script = document.createElement('script');
+            script.src = 'https://unpkg.com/@rdkit/rdkit/dist/RDKit_minimal.js';
+            script.onload = async () => {
+              try {
+                // Wait for RDKit module to be available
+                while (!window.initRDKitModule) {
+                  await new Promise(r => setTimeout(r, 100));
+                }
+                // Initialize RDKit module
+                window.RDKit = await window.initRDKitModule();
+                window.moleculeViewerDeps.rdkit = true;
+                console.log('RDKit initialized successfully');
+              } catch (error) {
+                console.error('Failed to initialize RDKit:', error);
+              }
+              resolve();
+            };
+            script.onerror = reject;
+            document.head.appendChild(script);
+          });
+        } catch (error) {
+          console.error('Failed to load visualization libraries:', error);
+        }
+      };
+
+      // Start loading scripts immediately
+      loadScripts();
+    </script>
+  </head>
+  <body>
+    <div id="root"></div>
+    <script type="module" src="/src/main.jsx"></script>
+  </body>
+</html>
